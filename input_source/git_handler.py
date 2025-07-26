@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 def clone_repo(repo_url: str) -> str:
     """
     Clones a Git repository from a given URL into a temporary directory.
+    Automatically adds .git suffix if missing.
 
     Args:
         repo_url (str): The URL of the Git repository to clone.
@@ -17,6 +18,10 @@ def clone_repo(repo_url: str) -> str:
              Returns an empty string if cloning fails.
     """
     try:
+        # Append .git if not present
+        if not repo_url.endswith(".git"):
+            repo_url += ".git"
+
         # Create a temporary directory to clone the repository into
         temp_dir = mkdtemp()
         logging.info(f"Cloning repository from {repo_url} into {temp_dir}")

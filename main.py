@@ -1,7 +1,9 @@
 import os
 from input_source.input_handler import process_input
 from input_source.zip_handler import ask_for_zip_file, extract_zip
+from input_source.git_handler import clone_repo
 from analysis.code_prepare import analyze_codebase
+from tech_stack.stack_detector import TechStackDetector
 
 def run_analysis(source_path: str):
     """Helper function to run the analysis and print results."""
@@ -30,12 +32,23 @@ def main():
     """
     Main function to demonstrate the input handling process.
     """
-    print("🤖 AI Code Review System - Input Handler Demo 🤖")
+    print("🤖 AI Code Review System ")
 
-    # --- Example 1: Processing a Git Repository ---
-    git_url = "https://github.com/gitpython-developers/GitPython1.git"
-    print(f"\nProcessing Git URL: {git_url}")
-    git_temp_path = process_input(git_url)
+    # ---  1: Processing a Git Repository ---
+    repo_url = "https://github.com/Netaji2742/ChatBot"
+    print(f"\nProcessing Git URL: {repo_url}")
+    git_temp_path = clone_repo(repo_url)
+    # Initialize and run the detector
+    detector = TechStackDetector(git_temp_path)
+    print("Running tech stack detection...")
+    # Run the detection
+    result_json = detector.run_detection()
+    print("Detecting technologies used in the codebase...")
+    if result_json:
+        print("Tech stack detection complete. Results:")
+        print(result_json)
+    else:
+        print("❌ Tech stack detection failed.")
 
     if git_temp_path:
         print(f" Git repository processed successfully. Code is in: {git_temp_path}")
