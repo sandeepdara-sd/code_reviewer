@@ -41,6 +41,8 @@ def main():
         print(f" Git repository processed successfully. Code is in: {git_temp_path}")
     else:
         print(" Failed to process Git repository.")
+        # Run analysis on the cloned repo
+        run_analysis(git_temp_path)
 
     # --- Example 2: Processing a ZIP File ---
     # Step 1: Ask the user to select a file
@@ -53,6 +55,8 @@ def main():
             print(f"✅ ZIP file processed successfully. Code is in: {zip_temp_path}")
         else:
             print(" Failed to process ZIP file.")
+        # Run analysis on the extracted files
+        run_analysis(zip_temp_path)
     else:
         print(" ZIP file processing skipped by user.")
 
