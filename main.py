@@ -1,89 +1,88 @@
-import os
-from input_source.input_handler import process_input
-from input_source.zip_handler import ask_for_zip_file, extract_zip
-from input_source.git_handler import clone_repo
-from analysis.code_prepare import analyze_codebase
-from tech_stack.stack_detector import TechStackDetector
+# main.py
+import logging
+from pathlib import Path
+from input_source.input_handler import process_input , cleanup_temp_dir, AUTO_DELETE_TEMP
+from codebase_extraction.File_walker.walker import walk_directory
 
-def run_analysis(source_path: str):
-    """Helper function to run the analysis and print results."""
-    if not source_path:
-        print("❌ Source code path is invalid. Skipping analysis.")
-        return
-
-    print("\n--- Phase 2: Codebase Extraction & Preparation ---")
-    analysis_result = analyze_codebase(source_path)
-
-    if analysis_result:
-        metadata = analysis_result["metadata"]
-        print(f"✅ Analysis complete!")
-        print(f"   - Python files found: {metadata['file_count']}")
-        print(f"   - Total size: {metadata['total_size_kb']} KB")
-        # Optionally, print a few file names
-        files = analysis_result["files"]
-        if files:
-            print("   - Example files:")
-            for f in files[:3]: # Print the first 3 files
-                print(f"     - {f}")
-    else:
-        print("❌ Codebase analysis failed.")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def main():
-    """
-    Main function to demonstrate the input handling process.
-    """
-    print("🤖 AI Code Review System ")
+    print("\n🤖 AI Code Review — File Walker Test\n")
 
-    # ---  1: Processing a Git Repository ---
-    repo_url = "https://github.com/sandeepdara-sd/ATS_Resume_Builder"
-    print(f"\nProcessing Git URL: {repo_url}")
-    git_temp_path = clone_repo(repo_url)
-    # Initialize and run the detector
-    detector = TechStackDetector(git_temp_path)
-    print("Running tech stack detection...")
-    # Run the detection
-    result_json = detector.run_detection()
-    print("Detecting technologies used in the codebase...")
-    if result_json:
-        print("Tech stack detection complete. Results:")
-        print(result_json)
+    input_path = input("Enter GitHub repo URL or local ZIP path: ").strip()
+    extracted_path = process_input(input_path)
+
+    if not extracted_path or not Path(extracted_path).exists():
+        logging.error("❌ Failed to process input source.")
+        return
+
+    logging.info(f"✅ Codebase available at: {extracted_path}")
+
+    # CALL the walker
+    result = walk_directory(Path(extracted_path))
+
+    # Backwards-compatible handling:
+    # - If result is a dict with "file_map", use it.
+    # - If result is directly the file_map, handle that too.
+    if isinstance(result, dict) and "file_map" in result:
+        file_map = result["file_map"]
+        summary = result.get("summary", {})
+        skipped = result.get("skipped_files", {"by_folder": [], "by_gitignore": []})
+    elif isinstance(result, dict):
+        # assume full file_map (old behavior)
+        file_map = result
+        summary = {}
+        skipped = {"by_folder": [], "by_gitignore": []}
     else:
-        print("❌ Tech stack detection failed.")
+        logging.error("Unexpected return type from walk_directory(): %s", type(result))
+        return
 
-    if git_temp_path:
-        print(f" Git repository processed successfully. Code is in: {git_temp_path}")
-    else:
-        print(" Failed to process Git repository.")
-        # Run analysis on the cloned repo
-        run_analysis(git_temp_path)
+    # === Summary ===
+    total_files = len(file_map)
+    total_lines = sum(info.get("lines", 0) for info in file_map.values())
+    total_size = sum(info.get("size_bytes", 0) for info in file_map.values())
 
-    # --- Example 2: Processing a ZIP File ---
-    # Step 1: Ask the user to select a file
-    selected_zip_path = ask_for_zip_file()
+    langs = {}
+    for info in file_map.values():
+        lang = info.get("language", "unknown")
+        langs[lang] = langs.get(lang, 0) + 1
 
-    # Step 2: If a file was selected, extract it
-    if selected_zip_path:
-        zip_temp_path = extract_zip(selected_zip_path)
-        if zip_temp_path:
-            print(f"✅ ZIP file processed successfully. Code is in: {zip_temp_path}")
-            detector = TechStackDetector(zip_temp_path)
-            print("Running tech stack detection...")
-            # Run the detection
-            result_json = detector.run_detection()
-            print("Detecting technologies used in the codebase...")
-            if result_json:
-                print("Tech stack detection complete. Results:")
-                print(result_json)
-            else:
-                print("❌ Tech stack detection failed.")
+    print("\n📊 Project Summary")
+    print(f"  Total files scanned: {total_files}")
+    print(f"  Total lines: {total_lines:,}")
+    print(f"  Total size: {total_size / 1024:.2f} KB")
+    print("  Languages detected:")
+    for lang, count in sorted(langs.items(), key=lambda x: x[1], reverse=True):
+        print(f"    {lang}: {count} files")
 
-        else:
-            print(" Failed to process ZIP file.")
-        # Run analysis on the extracted files
-        run_analysis(zip_temp_path)
+    # === Skipped Files ===
+    print("\n🚫 Skipped Files Summary:")
+    print(f"  By folder exclusion: {len(skipped.get('by_folder', []))}")
+    print(f"  By .gitignore rules: {len(skipped.get('by_gitignore', []))}")
+    # Print a few names if present
+    for k in ("by_folder", "by_gitignore"):
+        items = skipped.get(k, [])
+        if items:
+            print(f"\n  Sample skipped ({k}):")
+            for s in items[:10]:
+                print(f"    - {s}")
 
-    else:
-        print(" ZIP file processing skipped by user.")
+    # === Sample Metadata ===
+    print("\n🔍 Sample File Metadata:")
+    for i, (path, meta) in enumerate(file_map.items()):
+        print(f"- {path}")
+        print(f"    Language: {meta.get('language')}")
+        print(f"    Size: {meta.get('size_bytes')} bytes")
+        print(f"    Lines: {meta.get('lines')}")
+        print(f"    Hash: {meta.get('hash', '')[:16]}...")
+        if "notebook_cells" in meta:
+            print(f"    Notebook cells: {len(meta['notebook_cells'])}")
+        if i >= 4:  # limit to 5 files
+            break
+
+    if AUTO_DELETE_TEMP:
+        cleanup_temp_dir(extracted_path)
+    print("\n✅ Code Review completed successfully!")
 
 if __name__ == "__main__":
     main()

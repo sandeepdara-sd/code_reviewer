@@ -1,2 +1,6 @@
 GitPython
-plyer
+Pygments
+python-magic
+protobuf
+python-dotenv
+pathspec

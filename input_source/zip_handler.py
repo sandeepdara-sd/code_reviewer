@@ -1,35 +1,9 @@
 import logging
 import zipfile
 from tempfile import mkdtemp
-from plyer import filechooser # Import filechooser from plyer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-def ask_for_zip_file() -> str:
-    """
-    Opens the native OS file dialog to ask the user to select a ZIP file.
-
-    Returns:
-        str: The path to the selected ZIP file, or an empty string if canceled.
-    """
-    logging.info("Opening native OS file dialog to select a ZIP file...")
-
-    # Use plyer to open the file chooser
-    selected_paths = filechooser.open_file(
-        title="Select a ZIP file to analyze",
-        filters=[("ZIP files", "*.zip")]
-    )
-
-    # filechooser.open_file() returns a list of paths
-    if not selected_paths:
-        logging.warning("No file selected. ZIP handling cancelled.")
-        return ""
-
-    # Return the first selected path
-    zip_path = selected_paths[0]
-    logging.info(f"File selected: {zip_path}")
-    return zip_path
 
 def extract_zip(zip_path: str) -> str:
     """
