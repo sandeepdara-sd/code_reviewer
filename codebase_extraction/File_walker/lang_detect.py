@@ -8,11 +8,7 @@ from pygments.lexers import guess_lexer_for_filename
 from pygments.util import ClassNotFound
 
 from codebase_extraction.File_walker.config import EXTENSION_TO_LANGUAGE
-from codebase_extraction.File_walker.lang_cache import (
-    get_cached_language,
-    add_extension_mapping,
-    add_filename_mapping,
-)
+from codebase_extraction.File_walker.lang_cache import get_cached_language, add_extension_mapping, add_filename_mapping
 from codebase_extraction.File_walker.mime_detect import detect_file_type
 from codebase_extraction.File_walker.llm_fallback import guess_languages_for_extensions
 

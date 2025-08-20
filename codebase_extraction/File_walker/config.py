@@ -121,3 +121,10 @@ _MIME_PREREG = [
     ("application/x-sh", ".sh"),
     ("application/x-dockerfile", "Dockerfile"),
 ]
+
+# ------------------------------------------------------------
+# 9️⃣ Language Cache Settings
+# ------------------------------------------------------------
+# Controls caching for language detection results.
+CLEAR_LANG_CACHE_AFTER_RUN = False
+LANG_CACHE_PATH = ".lang_map_cache.json"

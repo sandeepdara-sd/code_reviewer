@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 from input_source.input_handler import process_input , cleanup_temp_dir, AUTO_DELETE_TEMP
-from codebase_extraction.File_walker.walker import walk_directory
+from codebase_extraction.File_walker.walker import walk_directory, clear_lang_cache
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -79,6 +79,8 @@ def main():
             print(f"    Notebook cells: {len(meta['notebook_cells'])}")
         if i >= 4:  # limit to 5 files
             break
+
+    clear_lang_cache()
 
     if AUTO_DELETE_TEMP:
         cleanup_temp_dir(extracted_path)

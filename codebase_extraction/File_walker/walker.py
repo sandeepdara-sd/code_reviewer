@@ -1,11 +1,11 @@
 # file_walker/walker.py
-
+import os
 import logging
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from codebase_extraction.File_walker.config import EXCLUDE_FOLDERS, PARALLEL_FILE_COUNT, PARALLEL_AVG_FILE_KB, EXTENSION_TO_LANGUAGE
-from codebase_extraction.File_walker.lang_cache import save_language_cache, add_extension_mapping, add_filename_mapping
+from codebase_extraction.File_walker.config import EXCLUDE_FOLDERS, PARALLEL_FILE_COUNT, PARALLEL_AVG_FILE_KB, CLEAR_LANG_CACHE_AFTER_RUN, LANG_CACHE_PATH
+from codebase_extraction.File_walker.lang_cache import save_language_cache
 from codebase_extraction.File_walker.metrics import get_file_size, count_lines, hash_file
 from codebase_extraction.File_walker.notebook_handler import extract_ipynb_cells
 from codebase_extraction.File_walker.gitignore_handler import load_all_gitignore_specs, is_ignored_by_any_gitignore
@@ -152,3 +152,12 @@ def walk_directory(root_path: Path) -> dict:
             "by_gitignore": skipped_by_gitignore
         }
     }
+
+def clear_lang_cache():
+    if CLEAR_LANG_CACHE_AFTER_RUN:
+        try:
+            if os.path.exists(LANG_CACHE_PATH):
+                os.remove(LANG_CACHE_PATH)
+                logger.info("Cleared language cache at end of run: %s", LANG_CACHE_PATH)
+        except Exception as e:
+            logger.warning("Failed to clear language cache: %s", e)
